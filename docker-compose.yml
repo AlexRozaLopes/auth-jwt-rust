@@ -3,8 +3,6 @@ services:
     image: alexroza/jwt_in_rust
     ports:
       - "8080:8080"
-    environment:
-      -
     networks:
       - net-api
     depends_on:
