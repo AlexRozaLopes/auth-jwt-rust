@@ -5,13 +5,19 @@ services:
       - "8080:8080"
     networks:
       - net-api
+    environment:
+      DATABASE_URL: "postgres://alex:alex@postgres/postgres"
     depends_on:
       - postgres
   postgres:
     image: postgres:latest
+    restart: always
     environment:
       POSTGRES_USER: alex
       POSTGRES_PASSWORD: alex
+      POSTGRES_DB: postgres
+    volumes:
+      - ./init-scripts:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     networks:
