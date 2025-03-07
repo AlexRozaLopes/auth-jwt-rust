@@ -3,7 +3,7 @@ mod data;
 mod schema;
 mod utils;
 
-use crate::controller::user_controller::post_user;
+use crate::controller::user_controller::{get_token, post_user};
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;
 use tracing_actix_web::TracingLogger;
@@ -17,6 +17,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(TracingLogger::default())
             .service(post_user)
             .service(hello)
+            .service(get_token)
     })
     .bind("0.0.0.0:8080")?
     .run()
