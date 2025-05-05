@@ -1,5 +1,5 @@
 use crate::schema::users::dsl::users;
-use crate::schema::users::{nickname, password};
+    use crate::schema::users::{email, nickname, password};
 use chrono::{NaiveDateTime, Utc};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
@@ -21,10 +21,10 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(email: String, pass: String, nick: String) -> User {
+    pub fn new(mail: String, pass: String, nick: String) -> User {
         User {
             id: Uuid::new_v4(),
-            email,
+            email: mail,
             password: pass,
             nickname: nick,
             created_at: Option::from(Utc::now().naive_utc()),
@@ -39,16 +39,43 @@ pub struct UserRequest {
     pub nickname: String,
 }
 
-pub fn create_user(request: UserRequest) -> QueryResult<User> {
+pub fn create_user(request: UserRequest) -> Result<User,String> {
     let mut connection = establish_connection();
     let mut sha256 = Sha256::new();
     sha256.update(request.password.as_bytes());
     let hash = format!("{:x}", sha256.finalize());
-    let user = User::new(request.email, hash, request.nickname);
-    diesel::insert_into(users::table())
+    let user = User::new(request.email.clone(), hash, request.nickname.clone());
+
+    let is_user = verify_is_user(
+        request.email.as_str(),
+        request.nickname.as_str(),
+    );
+    
+    if is_user {
+        return Err("User already exists".to_string());
+    }
+
+    match diesel::insert_into(users::table())
         .values(&user)
         .returning(User::as_returning())
-        .get_result(&mut connection)
+        .get_result(&mut connection) {
+        Ok(user) => {Ok(user)},
+        Err(err) => {Err(format!("{:?}", err))}
+    }
+}
+
+fn verify_is_user(mail: &str, nick: &str) -> bool {
+
+    let mut connection = establish_connection();
+    
+    let result = users
+        .filter(nickname.eq(nick).or(email.eq(mail)))
+        .first::<User>(&mut connection);
+
+    match result {
+        Ok(_) => true,
+        _ => false,
+    }
 }
 
 pub fn establish_connection() -> PgConnection {
